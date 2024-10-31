@@ -59,6 +59,18 @@ def generate_launch_description():
         launch_arguments={"gz_gui": namespaced_gz_gui, "gz_log_level": "1"}.items(),
     )
 
+    rviz_launch = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            PathJoinSubstitution(
+                [
+                    FindPackageShare("panther_description"),
+                    "launch",
+                    "rviz.launch.py",
+                ]
+            )
+        ),
+    )
+
     simulate_robots = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             PathJoinSubstitution(
@@ -77,6 +89,7 @@ def generate_launch_description():
         # Sets use_sim_time for all nodes started below (doesn't work for nodes started from ignition gazebo)
         SetUseSimTime(True),
         gz_sim,
+        rviz_launch,
         simulate_robots,
     ]
 
