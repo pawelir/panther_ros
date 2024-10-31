@@ -22,7 +22,7 @@ from launch.substitutions import (
     EnvironmentVariable,
     LaunchConfiguration,
     PathJoinSubstitution,
-    PythonExpression
+    PythonExpression,
 )
 from launch_ros.actions import Node, SetParameter
 from launch_ros.substitutions import FindPackageShare
@@ -42,8 +42,7 @@ def generate_launch_description():
     declare_rviz_config_arg = DeclareLaunchArgument(
         "rviz_config",
         default_value=PathJoinSubstitution(
-            [
-                FindPackageShare("panther_description"), "rviz", "husarion_ugv.rviz"]
+            [FindPackageShare("panther_description"), "rviz", "husarion_ugv.rviz"]
         ),
         description="RViz configuration file.",
     )
