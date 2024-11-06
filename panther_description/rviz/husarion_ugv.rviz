@@ -3,6 +3,7 @@ Panels:
     Help Height: 78
     Name: Displays
     Property Tree Widget:
+      Expanded: ~
       Splitter Ratio: 0.5
     Tree Height: 719
   - Class: rviz_common/Selection
@@ -68,69 +69,16 @@ Visualization Manager:
             Expand Link Details: false
             Expand Tree: false
             Link Tree Style: Links in Alphabetic Order
-            base_link:
-              Alpha: 1
-              Show Axes: false
-              Show Trail: false
-            body_link:
-              Alpha: 1
-              Show Axes: false
-              Show Trail: false
-              Value: true
-            cover_link:
-              Alpha: 1
-              Show Axes: false
-              Show Trail: false
-            fl_wheel_link:
-              Alpha: 1
-              Show Axes: false
-              Show Trail: false
-              Value: true
-            fr_wheel_link:
-              Alpha: 1
-              Show Axes: false
-              Show Trail: false
-              Value: true
-            front_bumper_link:
-              Alpha: 1
-              Show Axes: false
-              Show Trail: false
-            imu_link:
-              Alpha: 1
-              Show Axes: false
-              Show Trail: false
-            lights_channel_1_link:
-              Alpha: 1
-              Show Axes: false
-              Show Trail: false
-            lights_channel_2_link:
-              Alpha: 1
-              Show Axes: false
-              Show Trail: false
-            rear_bumper_link:
-              Alpha: 1
-              Show Axes: false
-              Show Trail: false
-            rl_wheel_link:
-              Alpha: 1
-              Show Axes: false
-              Show Trail: false
-              Value: true
-            rr_wheel_link:
-              Alpha: 1
-              Show Axes: false
-              Show Trail: false
-              Value: true
           Mass Properties:
             Inertia: false
             Mass: false
           Name: RobotModel
-          TF Prefix: "<robot_namespace>"
+          TF Prefix: <robot_namespace>
           Update Interval: 0
           Value: true
           Visual Enabled: true
         - Class: rviz_default_plugins/TF
-          Enabled: true
+          Enabled: false
           Frame Timeout: 15
           Frames:
             All Enabled: true
@@ -139,8 +87,10 @@ Visualization Manager:
           Show Arrows: true
           Show Axes: true
           Show Names: false
+          Tree:
+            {}
           Update Interval: 0
-          Value: true
+          Value: false
         - Angle Tolerance: 0.10000000149011612
           Class: rviz_default_plugins/Odometry
           Covariance:
@@ -158,7 +108,7 @@ Visualization Manager:
               Scale: 1
               Value: true
             Value: true
-          Enabled: true
+          Enabled: false
           Keep: 1000
           Name: Odometry
           Position Tolerance: 0.10000000149011612
@@ -179,7 +129,7 @@ Visualization Manager:
             History Policy: Keep Last
             Reliability Policy: Reliable
             Value: odometry/filtered
-          Value: true
+          Value: false
       Enabled: true
       Name: Robot
   Enabled: true
