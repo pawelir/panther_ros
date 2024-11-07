@@ -19,6 +19,7 @@
 
   <depend>behaviortree_cpp</depend>
   <depend>behaviortree_ros2</depend>
+  <depend>generate_parameter_library</depend>
   <depend>husarion_ugv_utils</depend>
   <depend>iputils-ping</depend>
   <depend>libboost-dev</depend>
