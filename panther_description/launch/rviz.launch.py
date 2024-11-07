@@ -17,7 +17,6 @@
 
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
-from launch.conditions import IfCondition
 from launch.substitutions import (
     EnvironmentVariable,
     LaunchConfiguration,
@@ -47,14 +46,6 @@ def generate_launch_description():
         description="RViz configuration file.",
     )
 
-    use_rviz = LaunchConfiguration("use_rviz")
-    declare_use_rviz_arg = DeclareLaunchArgument(
-        "use_rviz",
-        default_value="True",
-        description="Run RViz simultaneously.",
-        choices=["True", "true", "False", "false"],
-    )
-
     use_sim = LaunchConfiguration("use_sim")
     declare_use_sim_arg = DeclareLaunchArgument(
         "use_sim",
@@ -75,13 +66,11 @@ def generate_launch_description():
         executable="rviz2",
         namespace=namespace,
         arguments=["-d", rviz_config],
-        condition=IfCondition(use_rviz),
     )
 
     actions = [
         declare_namespace_arg,
         declare_rviz_config_arg,
-        declare_use_rviz_arg,
         declare_use_sim_arg,
         SetParameter(name="use_sim_time", value=use_sim),
         rviz_node,

@@ -16,6 +16,7 @@
 
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
+from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import (
     EnvironmentVariable,
@@ -45,6 +46,14 @@ def generate_launch_description():
         description="Add namespace to all launched nodes.",
     )
 
+    use_rviz = LaunchConfiguration("use_rviz")
+    declare_use_rviz_arg = DeclareLaunchArgument(
+        "use_rviz",
+        default_value="True",
+        description="Run RViz simultaneously.",
+        choices=["True", "true", "False", "false"],
+    )
+
     namespaced_gz_gui = ReplaceString(
         source_file=gz_gui,
         replacements={"{namespace}": namespace},
@@ -69,6 +78,7 @@ def generate_launch_description():
                 ]
             )
         ),
+        condition=IfCondition(use_rviz),
     )
 
     simulate_robots = IncludeLaunchDescription(
@@ -86,6 +96,7 @@ def generate_launch_description():
     actions = [
         declare_gz_gui,
         declare_namespace_arg,
+        declare_use_rviz_arg,
         # Sets use_sim_time for all nodes started below (doesn't work for nodes started from ignition gazebo)
         SetUseSimTime(True),
         gz_sim,
