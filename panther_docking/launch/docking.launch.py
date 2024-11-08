@@ -13,13 +13,11 @@
 # limitations under the License.
 
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument
-from launch.conditions import IfCondition
-from launch.substitutions import (
-    EnvironmentVariable,
-    LaunchConfiguration,
-    PathJoinSubstitution,
-)
+from launch.actions import DeclareLaunchArgument  # , IncludeLaunchDescription
+from launch.conditions import IfCondition  # , UnlessCondition
+
+# from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
 from nav2_common.launch import ReplaceString
@@ -35,14 +33,6 @@ def generate_launch_description():
         description=("Path to docking server configuration file."),
     )
 
-    namespace = LaunchConfiguration("namespace")
-    declare_namespace_arg = DeclareLaunchArgument(
-        "namespace",
-        default_value=EnvironmentVariable("ROBOT_NAMESPACE", default_value=""),
-        description="Add namespace to all launched nodes.",
-    )
-
-    use_docking = LaunchConfiguration("use_docking")
     declare_use_docking_arg = DeclareLaunchArgument(
         "use_docking",
         default_value="True",
@@ -50,12 +40,16 @@ def generate_launch_description():
         choices=["True", "False", "true", "false"],
     )
 
+    namespace = LaunchConfiguration("namespace")
+    use_docking = LaunchConfiguration("use_docking")
     use_sim = LaunchConfiguration("use_sim")
-    declare_use_sim_arg = DeclareLaunchArgument(
-        "use_sim",
-        default_value="False",
-        description="Whether simulation is used.",
-        choices=["True", "False", "true", "false"],
+
+    log_level = LaunchConfiguration("log_level")
+    declare_log_level = DeclareLaunchArgument(
+        "log_level",
+        default_value="info",
+        description="Logging level",
+        choices=["debug", "info", "warning", "error"],
     )
 
     namespaced_docking_server_config = ReplaceString(
@@ -71,6 +65,7 @@ def generate_launch_description():
             namespaced_docking_server_config,
             {"use_sim_time": use_sim},
         ],
+        arguments=["--ros-args", "--log-level", log_level, "--log-level", "rcl:=INFO"],
         remappings=[("~/transition_event", "~/_transition_event")],
         emulate_tty=True,
         condition=IfCondition(use_docking),
@@ -93,13 +88,43 @@ def generate_launch_description():
         condition=IfCondition(use_docking),
     )
 
+    dock_pose_publisher = Node(
+        package="panther_docking",
+        executable="dock_pose_publisher",
+        parameters=[
+            namespaced_docking_server_config,
+            {"use_sim_time": use_sim},
+        ],
+        name="dock_pose_publisher",
+        namespace=namespace,
+        emulate_tty=True,
+        arguments=["--ros-args", "--log-level", log_level, "--log-level", "rcl:=INFO"],
+        condition=IfCondition(use_docking),
+    )
+
+    # FIXME: This launch does not work with the simulation. It can be caused by different versions of opencv
+    # station_launch = IncludeLaunchDescription(
+    #     PythonLaunchDescriptionSource(
+    #         PathJoinSubstitution(
+    #             [
+    #                 FindPackageShare("panther_docking"),
+    #                 "launch",
+    #                 "station.launch.py",
+    #             ]
+    #         ),
+    #     ),
+    #     launch_arguments={"namespace": namespace}.items(),
+    #     condition=UnlessCondition(use_sim),
+    # )
+
     return LaunchDescription(
         [
-            declare_docking_server_config_path_arg,
-            declare_namespace_arg,
             declare_use_docking_arg,
-            declare_use_sim_arg,
+            declare_docking_server_config_path_arg,
+            declare_log_level,
+            # station_launch,
             docking_server_node,
             docking_server_activate_node,
+            dock_pose_publisher,
         ]
     )

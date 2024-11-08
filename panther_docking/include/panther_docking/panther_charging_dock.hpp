@@ -25,6 +25,7 @@
 #include <opennav_docking_core/charging_dock.hpp>
 #include <opennav_docking_core/docking_exceptions.hpp>
 #include <rclcpp/rclcpp.hpp>
+#include <rclcpp_lifecycle/lifecycle_node.hpp>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 
 #include <geometry_msgs/msg/pose_stamped.hpp>
@@ -139,56 +140,12 @@ protected:
    */
   void getParameters(const rclcpp_lifecycle::LifecycleNode::SharedPtr & node);
 
-  /**
-   * @brief Offset the staging pose.
-   *
-   * This method offsets the staging dock pose by values described in a configuration.
-   *
-   * @param dock_pose The dock pose to offset.
-   *
-   * @return The offset staging pose.
-   */
-  PoseStampedMsg offsetStagingPoseToDockPose(const PoseStampedMsg & dock_pose);
+  void updateAndPublishStagingPose();
 
-  /**
-   * @brief Offset the detected dock pose.
-   *
-   * This method offsets the detected dock pose by values described in a configuration.
-   *
-   * @param detected_dock_pose The detected dock pose to offset.
-   *
-   * @return The offset detected dock pose.
-   */
-  PoseStampedMsg offsetDetectedDockPose(const PoseStampedMsg & detected_dock_pose);
-
-  /**
-   * @brief Get the dock pose in a detection dock frame.
-   *
-   * This method retrieves the dock pose in a detection dock frame.
-   *
-   * @param frame The detection frame to get the dock pose in.
-   * @return The dock pose in the detection frame.
-   */
-  PoseStampedMsg getDockPose(const std::string & frame);
-
-  /**
-   * @brief Method to update the dock pose and publish it.
-   *
-   * This method makes all necessary transformations to update the dock pose and publishes it.
-   *
-   */
-  void updateDockPoseAndPublish();
-
-  /**
-   * @brief Update the staging pose and publish it.
-   *
-   * This method makes all necessary transformations to update the staging pose and publishes it.
-   *
-   * @param frame The frame to publish the staging pose in.
-   */
-  void updateStagingPoseAndPublish(const std::string & frame);
+  void setDockPose(const PoseStampedMsg::SharedPtr pose);
 
   std::string base_frame_name_;
+  std::string fixed_frame_name_;
   std::string dock_frame_;
 
   rclcpp::Logger logger_{rclcpp::get_logger("PantherChargingDock")};
@@ -198,16 +155,12 @@ protected:
   tf2_ros::Buffer::SharedPtr tf2_buffer_;
 
   rclcpp::Publisher<PoseStampedMsg>::SharedPtr staging_pose_pub_;
-  rclcpp::Publisher<PoseStampedMsg>::SharedPtr dock_pose_pub_;
+  rclcpp::Subscription<PoseStampedMsg>::SharedPtr dock_pose_sub_;
 
   PoseStampedMsg dock_pose_;
   PoseStampedMsg staging_pose_;
 
   double external_detection_timeout_;
-  tf2::Quaternion external_detection_rotation_;
-  double external_detection_translation_x_;
-  double external_detection_translation_y_;
-  double external_detection_translation_z_;
 
   std::shared_ptr<opennav_docking::PoseFilter> pose_filter_;
 
