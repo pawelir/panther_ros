@@ -1,0 +1,36 @@
+---
+name: Run unit tests
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  test:
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.ref }}
+          path: ros2_ws/src/husarion_ugv
+
+      - name: Resolve dependencies
+        working-directory: ros2_ws
+        run: |
+          vcs import < src/husarion_ugv/husarion_ugv/simulation_deps.repos src
+          cp -r ./ros2_controllers/diff_drive_controller src
+          cp -r ./ros2_controllers/imu_sensor_broadcaster src
+          rm -rf ./ros2_controllers
+          sudo apt update
+          rosdep update --rosdistro $ROS_DISTRO
+          rosdep install -i --from-path src --rosdistro $ROS_DISTRO -y
+
+      - name: Setup ROS
+        uses: ros-tooling/setup-ros@v0.7
+        with:
+          use-ros2-testing: true
+
+      - name: Build and test
+        uses: ros-tooling/action-ros-ci@v0.3
+        with:
+          target-ros2-distro: humble
