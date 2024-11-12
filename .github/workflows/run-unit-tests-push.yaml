@@ -23,7 +23,7 @@ jobs:
       - name: Build and test
         uses: ros-tooling/action-ros-ci@v0.3
         with:
-          vcs-repo-file-url: ros2_ws/src/husarion_ugv/src/husarion_ugv/husarion_ugv/simulation_deps.repos
+          vcs-repo-file-url: "${{ github.workspace }}/husarion_ugv/simulation_deps.repos"
           target-ros2-distro: humble
           colcon-defaults: |
             {
