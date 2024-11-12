@@ -10,10 +10,7 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
-        with:
-          ref: ${{ github.ref }}
-          path: ros2_ws/src/husarion_ugv
+        uses: actions/checkout@v4
 
       - name: Setup ROS
         uses: ros-tooling/setup-ros@v0.7
