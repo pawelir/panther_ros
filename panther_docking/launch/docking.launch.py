@@ -13,11 +13,14 @@
 # limitations under the License.
 
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument  # , IncludeLaunchDescription
-from launch.conditions import IfCondition  # , UnlessCondition
-
-# from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
+from launch.conditions import IfCondition
+from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch.substitutions import (
+    LaunchConfiguration,
+    PathJoinSubstitution,
+    PythonExpression,
+)
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
 from nav2_common.launch import ReplaceString
@@ -52,9 +55,23 @@ def generate_launch_description():
         choices=["debug", "info", "warning", "error"],
     )
 
+    use_wibotic_info = LaunchConfiguration("use_wibotic_info")
+    declare_use_wibotic_info_arg = DeclareLaunchArgument(
+        "use_wibotic_info",
+        default_value="True",
+        description="Whether Wibotic information is used",
+        choices=[True, False, "True", "False", "true", "false", "1", "0"],
+    )
+
     namespaced_docking_server_config = ReplaceString(
         source_file=docking_server_config_path,
-        replacements={"<robot_namespace>": namespace, "//": "/"},
+        replacements={
+            "<robot_namespace>": namespace,
+            "//": "/",
+            "<use_wibotic_info_param>": PythonExpression(
+                ["'false' if '", use_sim, "' else '", use_wibotic_info, "'"]
+            ),
+        },
     )
 
     docking_server_node = Node(
@@ -102,29 +119,59 @@ def generate_launch_description():
         condition=IfCondition(use_docking),
     )
 
-    # FIXME: This launch does not work with the simulation. It can be caused by different versions of opencv
-    # station_launch = IncludeLaunchDescription(
-    #     PythonLaunchDescriptionSource(
-    #         PathJoinSubstitution(
-    #             [
-    #                 FindPackageShare("panther_docking"),
-    #                 "launch",
-    #                 "station.launch.py",
-    #             ]
-    #         ),
-    #     ),
-    #     launch_arguments={"namespace": namespace}.items(),
-    #     condition=UnlessCondition(use_sim),
-    # )
+    station_launch = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            PathJoinSubstitution(
+                [
+                    FindPackageShare("panther_docking"),
+                    "launch",
+                    "station.launch.py",
+                ]
+            ),
+        ),
+        launch_arguments={"namespace": namespace}.items(),
+    )
+
+    wibotic_connector_can = Node(
+        package="wibotic_connector_can",
+        executable="wibotic_connector_can",
+        namespace=namespace,
+        emulate_tty=True,
+        arguments=["--ros-args", "--log-level", log_level, "--log-level", "rcl:=INFO"],
+        condition=IfCondition(
+            PythonExpression(["not ", use_sim, " and ", use_wibotic_info, " and ", use_docking])
+        ),
+    )
+
+    # FIXME: Remove before release
+    panther_manager_dir = FindPackageShare("panther_manager")
+    docking_manager_node = Node(
+        package="panther_manager",
+        executable="docking_manager_node",
+        name="docking_manager",
+        parameters=[
+            PathJoinSubstitution([panther_manager_dir, "config", "docking_manager.yaml"]),
+            {
+                "bt_project_path": PathJoinSubstitution(
+                    [panther_manager_dir, "behavior_trees", "DockingBT.btproj"]
+                )
+            },
+        ],
+        namespace=namespace,
+        emulate_tty=True,
+    )
 
     return LaunchDescription(
         [
             declare_use_docking_arg,
             declare_docking_server_config_path_arg,
             declare_log_level,
-            # station_launch,
+            declare_use_wibotic_info_arg,
+            station_launch,
             docking_server_node,
             docking_server_activate_node,
             dock_pose_publisher,
+            wibotic_connector_can,
+            docking_manager_node,
         ]
     )
