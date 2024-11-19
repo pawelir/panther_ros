@@ -61,12 +61,12 @@ TEST(TestMovingAverage, TestHighOverload)
 
   double sum = 0.0;
   for (std::size_t i = 1; i <= window_len * 10; i++) {
-    sum += double(i);
+    sum += double(i) / double(window_len);
     ma.Roll(double(i));
 
     // test every 1000 rolls expected average
     if (i % window_len == 0) {
-      EXPECT_EQ(sum / double(window_len), ma.GetAverage());
+      EXPECT_LT(sum - ma.GetAverage(), std::numeric_limits<double>::epsilon());
       sum = 0.0;
     }
   }
@@ -105,6 +105,25 @@ TEST(TestMovingAverage, TestResetToInitialValue)
   EXPECT_EQ(1.5, ma.GetAverage());
   ma.Reset();
   EXPECT_EQ(7.0, ma.GetAverage());
+}
+
+TEST(TestMovingAverage, TestInfInjectionHandling)
+{
+  husarion_ugv_utils::MovingAverage<double> ma(4);
+  ma.Roll(1.0);
+  ma.Roll(2.0);
+  ma.Roll(3.0);
+  ma.Roll(4.0);
+  EXPECT_EQ(2.5, ma.GetAverage());
+
+  ma.Roll(std::numeric_limits<double>::infinity());
+  EXPECT_EQ(std::numeric_limits<double>::infinity(), ma.GetAverage());
+
+  ma.Roll(1.0);
+  ma.Roll(2.0);
+  ma.Roll(3.0);
+  ma.Roll(4.0);
+  EXPECT_EQ(2.5, ma.GetAverage());
 }
 
 int main(int argc, char ** argv)
