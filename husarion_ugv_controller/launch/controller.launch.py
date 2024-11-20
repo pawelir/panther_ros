@@ -34,6 +34,11 @@ from launch_ros.substitutions import FindPackageShare
 
 
 def generate_launch_description():
+    husarion_ugv_desctiption_pkg = FindPackageShare("husarion_ugv_description")
+    husarion_ugv_controller_common_dir = PathJoinSubstitution(
+        ["/config", "husarion_ugv_controller"]
+    )
+
     battery_config_path = LaunchConfiguration("battery_config_path")
     declare_battery_config_path_arg = DeclareLaunchArgument(
         "battery_config_path",
@@ -48,7 +53,7 @@ def generate_launch_description():
     declare_components_config_path_arg = DeclareLaunchArgument(
         "components_config_path",
         default_value=PathJoinSubstitution(
-            [FindPackageShare("panther_description"), "config", "components.yaml"]
+            [husarion_ugv_desctiption_pkg, "config", "components.yaml"]
         ),
         description=(
             "Additional components configuration file. Components described in this file "
@@ -64,7 +69,7 @@ def generate_launch_description():
         "controller_config_path",
         default_value=PathJoinSubstitution(
             [
-                FindPackageShare("husarion_ugv_controller"),
+                husarion_ugv_controller_common_dir,
                 "config",
                 PythonExpression(["'", wheel_type, "_controller.yaml'"]),
             ]
@@ -112,20 +117,19 @@ def generate_launch_description():
         choices=["True", "true", "False", "false"],
     )
 
-    robot_description_pkg = PythonExpression(["'", robot_model, "_description'"])
     wheel_config_path = LaunchConfiguration("wheel_config_path")
     declare_wheel_config_path_arg = DeclareLaunchArgument(
         "wheel_config_path",
         default_value=PathJoinSubstitution(
             [
-                FindPackageShare(robot_description_pkg),
+                FindPackageShare(husarion_ugv_desctiption_pkg),
                 "config",
                 PythonExpression(["'", wheel_type, ".yaml'"]),
             ]
         ),
         description=(
             "Path to wheel configuration file. By default, it is located in "
-            "'panther_description/config/{wheel_type}.yaml'. You can also specify the path "
+            "'husarion_ugv_description/config/{wheel_type}.yaml'. You can also specify the path "
             "to your custom wheel configuration file here. "
         ),
     )
@@ -143,7 +147,6 @@ def generate_launch_description():
     )
 
     # Get URDF via xacro
-    robot_description_pkg = PythonExpression(["'", robot_model, "_description'"])
     robot_description_file = PythonExpression(["'", robot_model, ".urdf.xacro'"])
     imu_pos_x = os.environ.get("ROBOT_IMU_LOCALIZATION_X", "0.168")
     imu_pos_y = os.environ.get("ROBOT_IMU_LOCALIZATION_Y", "0.028")
@@ -157,7 +160,7 @@ def generate_launch_description():
             " ",
             PathJoinSubstitution(
                 [
-                    FindPackageShare(robot_description_pkg),
+                    FindPackageShare(husarion_ugv_desctiption_pkg),
                     "urdf",
                     robot_description_file,
                 ]
