@@ -24,7 +24,6 @@ from launch.substitutions import (
     EnvironmentVariable,
     LaunchConfiguration,
     PathJoinSubstitution,
-    PythonExpression,
 )
 from launch_ros.actions import Node, SetUseSimTime
 from launch_ros.substitutions import FindPackageShare
@@ -45,7 +44,7 @@ def generate_launch_description():
     declare_robot_model_arg = DeclareLaunchArgument(
         "robot_model",
         default_value=robot_model_dict[robot_model_env],
-        description="Specify robot model",
+        description="Specify robot model.",
         choices=["lynx", "panther"],
     )
 
@@ -85,16 +84,16 @@ def generate_launch_description():
     }
     welcome_info = welcome_msg(robot_model, "----", "simulation", log_stats)
 
-    robot_description_pkg = PythonExpression(["'", robot_model, "_description'"])
     load_urdf = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             PathJoinSubstitution(
-                [FindPackageShare(robot_description_pkg), "launch", "load_urdf.launch.py"]
+                [FindPackageShare("husarion_ugv_description"), "launch", "load_urdf.launch.py"]
             )
         ),
         launch_arguments={
             "add_wheel_joints": LaunchConfiguration("add_wheel_joints", default="True"),
             "namespace": namespace,
+            "robot_model": robot_model,
             "use_sim": "True",
         }.items(),
     )

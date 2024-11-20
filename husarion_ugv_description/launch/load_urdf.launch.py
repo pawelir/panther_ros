@@ -18,9 +18,8 @@
 import os
 
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, RegisterEventHandler
-from launch.conditions import IfCondition, UnlessCondition
-from launch.event_handlers import OnProcessExit
+from launch.actions import DeclareLaunchArgument
+from launch.conditions import IfCondition
 from launch.substitutions import (
     Command,
     EnvironmentVariable,
@@ -34,6 +33,15 @@ from launch_ros.substitutions import FindPackageShare
 
 
 def generate_launch_description():
+    add_wheel_joints = LaunchConfiguration("add_wheel_joints")
+    declared_add_wheel_joints_arg = DeclareLaunchArgument(
+        "add_wheel_joints",
+        default_value="True",
+        description="Flag enabling joint_state_publisher to publish information about the wheel "
+        "position. Should be false when there is a controller that sends this information.",
+        choices=["True", "true", "False", "false"],
+    )
+
     battery_config_path = LaunchConfiguration("battery_config_path")
     declare_battery_config_path_arg = DeclareLaunchArgument(
         "battery_config_path",
@@ -51,10 +59,8 @@ def generate_launch_description():
             [FindPackageShare("husarion_ugv_description"), "config", "components.yaml"]
         ),
         description=(
-            "Additional components configuration file. Components described in this file "
-            "are dynamically included in robot's URDF."
-            "Available options are described in the manual: "
-            "https://husarion.com/manuals/panther/panther-options/"
+            "Specify file which contains components. These components will be included in URDF."
+            "Available options can be found in manuals: https://husarion.com/manuals"
         ),
     )
 
@@ -83,17 +89,6 @@ def generate_launch_description():
         description="Add namespace to all launched nodes.",
     )
 
-    publish_robot_state = LaunchConfiguration("publish_robot_state")
-    declare_publish_robot_state_arg = DeclareLaunchArgument(
-        "publish_robot_state",
-        default_value="True",
-        description=(
-            "Whether to launch the robot_state_publisher node."
-            "When set to False, users should publish their own robot description."
-        ),
-        choices=["True", "true", "False", "false"],
-    )
-
     robot_model = LaunchConfiguration("robot_model")
     robot_model_dict = {"LNX": "lynx", "PTH": "panther"}
     robot_model_env = os.environ.get("ROBOT_MODEL", default="PTH")
@@ -108,7 +103,7 @@ def generate_launch_description():
     declare_use_sim_arg = DeclareLaunchArgument(
         "use_sim",
         default_value="False",
-        description="Whether simulation is used",
+        description="Whether simulation is used.",
         choices=["True", "true", "False", "false"],
     )
 
@@ -117,7 +112,7 @@ def generate_launch_description():
         "wheel_config_path",
         default_value=PathJoinSubstitution(
             [
-                FindPackageShare("husario_ugv_description"),
+                FindPackageShare("husarion_ugv_description"),
                 "config",
                 PythonExpression(["'", wheel_type, ".yaml'"]),
             ]
@@ -172,126 +167,41 @@ def generate_launch_description():
             components_config_path,
         ]
     )
-    robot_description = {"robot_description": robot_description_content}
-
-    control_node = Node(
-        package="controller_manager",
-        executable="ros2_control_node",
-        parameters=[robot_description, controller_config_path],
-        namespace=namespace,
-        remappings=[
-            ("/diagnostics", "diagnostics"),
-            ("drive_controller/cmd_vel_unstamped", "cmd_vel"),
-            ("drive_controller/odom", "odometry/wheels"),
-            ("drive_controller/transition_event", "_drive_controller/transition_event"),
-            ("hardware_controller/aux_power_enable", "hardware/aux_power_enable"),
-            ("hardware_controller/charger_enable", "hardware/charger_enable"),
-            ("hardware_controller/digital_power_enable", "hardware/digital_power_enable"),
-            ("hardware_controller/e_stop_reset", "hardware/e_stop_reset"),
-            ("hardware_controller/e_stop_trigger", "hardware/e_stop_trigger"),
-            ("hardware_controller/e_stop", "hardware/e_stop"),
-            ("hardware_controller/fan_enable", "hardware/fan_enable"),
-            ("hardware_controller/io_state", "hardware/io_state"),
-            ("hardware_controller/led_control_enable", "hardware/led_control_enable"),
-            ("hardware_controller/robot_driver_state", "hardware/robot_driver_state"),
-            ("hardware_controller/motor_power_enable", "hardware/motor_power_enable"),
-            ("imu_broadcaster/imu", "imu/data"),
-            ("imu_broadcaster/transition_event", "_imu_broadcaster/transition_event"),
-            (
-                "joint_state_broadcaster/transition_event",
-                "_joint_state_broadcaster/transition_event",
-            ),
-        ],
-        condition=UnlessCondition(use_sim),
-        emulate_tty=True,
-    )
 
     namespace_ext = PythonExpression(["'", namespace, "' + '/' if '", namespace, "' else ''"])
 
     robot_state_pub_node = Node(
         package="robot_state_publisher",
         executable="robot_state_publisher",
-        arguments=["--ros-args", "--disable-stdout-logs"],  # Suppress log messages
-        parameters=[robot_description, {"frame_prefix": namespace_ext}],
-        namespace=namespace,
-        condition=IfCondition(publish_robot_state),
-    )
-
-    drive_controller_spawner = Node(
-        package="controller_manager",
-        executable="spawner",
-        arguments=[
-            "drive_controller",
-            "--controller-manager",
-            "controller_manager",
-            "--controller-manager-timeout",
-            "10",
+        parameters=[
+            {"robot_description": robot_description_content},
+            {"frame_prefix": namespace_ext},
         ],
         namespace=namespace,
         emulate_tty=True,
     )
 
-    joint_state_broadcaster_spawner = Node(
-        package="controller_manager",
-        executable="spawner",
-        arguments=[
-            "joint_state_broadcaster",
-            "--controller-manager",
-            "controller_manager",
-            "--controller-manager-timeout",
-            "10",
-        ],
+    joint_state_publisher_node = Node(
+        package="joint_state_publisher",
+        executable="joint_state_publisher",
         namespace=namespace,
         emulate_tty=True,
-    )
-
-    # Delay start of robot_controller after joint_state_broadcaster
-    delay_drive_controller_spawner_after_joint_state_broadcaster_spawner = RegisterEventHandler(
-        event_handler=OnProcessExit(
-            target_action=joint_state_broadcaster_spawner,
-            on_exit=[drive_controller_spawner],
-        )
-    )
-
-    imu_broadcaster_spawner = Node(
-        package="controller_manager",
-        executable="spawner",
-        arguments=[
-            "imu_broadcaster",
-            "--controller-manager",
-            "controller_manager",
-            "--controller-manager-timeout",
-            "10",
-        ],
-        namespace=namespace,
-        emulate_tty=True,
-    )
-
-    # Delay start of imu_broadcaster after robot_controller
-    # when spawning without delay ros2_control_node sometimes crashed
-    delay_imu_broadcaster_spawner_after_drive_controller_spawner = RegisterEventHandler(
-        event_handler=OnProcessExit(
-            target_action=drive_controller_spawner,
-            on_exit=[imu_broadcaster_spawner],
-        ),
+        condition=IfCondition(add_wheel_joints),
     )
 
     actions = [
+        declared_add_wheel_joints_arg,
         declare_battery_config_path_arg,
+        declare_components_config_path_arg,
         declare_robot_model_arg,  # robot_model is used by wheel_type
         declare_wheel_type_arg,  # wheel_type is used by controller_config_path
-        declare_components_config_path_arg,
         declare_controller_config_path_arg,
         declare_namespace_arg,
-        declare_publish_robot_state_arg,
         declare_use_sim_arg,
         declare_wheel_config_path_arg,
         SetParameter(name="use_sim_time", value=use_sim),
-        control_node,
         robot_state_pub_node,
-        joint_state_broadcaster_spawner,
-        delay_drive_controller_spawner_after_joint_state_broadcaster_spawner,
-        delay_imu_broadcaster_spawner_after_drive_controller_spawner,
+        joint_state_publisher_node,  # do not publish, when use_sim is true
     ]
 
     return LaunchDescription(actions)

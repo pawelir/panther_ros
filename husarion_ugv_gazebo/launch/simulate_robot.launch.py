@@ -55,12 +55,10 @@ def generate_launch_description():
     )
 
     components_config_path = LaunchConfiguration("components_config_path")
-    robot_model = LaunchConfiguration("robot_model")
-    robot_description_pkg = PythonExpression(["'", robot_model, "_description'"])
     declare_components_config_path_arg = DeclareLaunchArgument(
         "components_config_path",
         default_value=PathJoinSubstitution(
-            [FindPackageShare(robot_description_pkg), "config", "components.yaml"]
+            [FindPackageShare("husarion_ugv_description"), "config", "components.yaml"]
         ),
         description=(
             "Additional components configuration file. Components described in this file "
@@ -94,12 +92,13 @@ def generate_launch_description():
         description="Add namespace to all launched nodes.",
     )
 
+    robot_model = LaunchConfiguration("robot_model")
     robot_model_dict = {"LNX": "lynx", "PTH": "panther"}
     robot_model_env = os.environ.get("ROBOT_MODEL", default="PTH")
     declare_robot_model_arg = DeclareLaunchArgument(
         "robot_model",
         default_value=robot_model_dict[robot_model_env],
-        description="Specify robot model",
+        description="Specify robot model.",
         choices=["lynx", "panther"],
     )
 
@@ -112,6 +111,7 @@ def generate_launch_description():
         launch_arguments={
             "add_wheel_joints": "False",
             "namespace": namespace,
+            "robot_model": robot_model,
         }.items(),
     )
 
