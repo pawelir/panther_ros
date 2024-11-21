@@ -107,11 +107,13 @@ void LightsManagerNode::RegisterBehaviorTree()
 std::map<std::string, std::any> LightsManagerNode::CreateLightsInitialBlackboard()
 {
   update_charging_anim_step_ = this->params_.battery.charging_anim_step;
-  const double critical_battery_anim_period = this->params_.battery.anim_period.critical;
-  const double critical_battery_threshold_percent =
-    this->params_.battery.percent.threshold.critical;
-  const double low_battery_anim_period = this->params_.battery.anim_period.low;
-  const double low_battery_threshold_percent = this->params_.battery.percent.threshold.low;
+  const float critical_battery_anim_period =
+    static_cast<float>(this->params_.battery.anim_period.critical);
+  const float critical_battery_threshold_percent =
+    static_cast<float>(this->params_.battery.percent.threshold.critical);
+  const float low_battery_anim_period = static_cast<float>(this->params_.battery.anim_period.low);
+  const float low_battery_threshold_percent =
+    static_cast<float>(this->params_.battery.percent.threshold.low);
 
   const std::string undefined_charging_anim_percent = "";
   const int undefined_anim_id = -1;
