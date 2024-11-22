@@ -27,29 +27,32 @@ public:
   MovingAverage(const std::size_t window_size = 5, const T initial_value = T(0))
   : window_size_(window_size), initial_value_(initial_value)
   {
+    if (window_size_ == 0) {
+      throw std::invalid_argument("Window size must be greater than 0");
+    }
   }
 
   void Roll(const T value)
   {
-    values_.push_back(value);
+    buffer_.push_back(value);
 
-    if (values_.size() > window_size_) {
-      values_.pop_front();
+    if (buffer_.size() > window_size_) {
+      buffer_.pop_front();
     }
   }
 
-  void Reset() { values_.erase(values_.begin(), values_.end()); }
+  void Reset() { buffer_.erase(buffer_.begin(), buffer_.end()); }
 
   T GetAverage() const
   {
-    if (values_.size() == 0) {
+    if (buffer_.size() == 0) {
       return initial_value_;
     }
 
     T sum = T(0);
 
-    for (const auto & value : values_) {
-      sum += value / static_cast<T>(values_.size());
+    for (const auto & value : buffer_) {
+      sum += value / static_cast<T>(buffer_.size());
     }
 
     return sum;
@@ -57,7 +60,7 @@ public:
 
 private:
   const std::size_t window_size_;
-  std::deque<T> values_;
+  std::deque<T> buffer_;
   const T initial_value_;
 };
 
