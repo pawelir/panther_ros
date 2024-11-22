@@ -16,6 +16,7 @@
 #define HUSARION_UGV_UTILS_MOVING_AVERAGE_HPP_
 
 #include <deque>
+#include <numeric>
 
 namespace husarion_ugv_utils
 {
@@ -49,13 +50,10 @@ public:
       return initial_value_;
     }
 
-    T sum = T(0);
+    T sum = std::accumulate(buffer_.begin(), buffer_.end(), T(0));
+    T average = sum / static_cast<T>(buffer_.size());
 
-    for (const auto & value : buffer_) {
-      sum += value / static_cast<T>(buffer_.size());
-    }
-
-    return sum;
+    return average;
   }
 
 private:

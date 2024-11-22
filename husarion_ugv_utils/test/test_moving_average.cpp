@@ -59,15 +59,16 @@ TEST(TestMovingAverage, TestHighOverload)
   const std::size_t window_len = 1000;
   husarion_ugv_utils::MovingAverage<double> ma(window_len);
 
-  double avg = 0.0;
+  double sum = 0.0;
   for (std::size_t i = 1; i <= window_len * 10; i++) {
-    avg += double(i) / double(window_len);
+    sum += double(i);
     ma.Roll(double(i));
 
     // test every 1000 rolls expected average
     if (i % window_len == 0) {
-      ASSERT_NEAR(avg, ma.GetAverage(), std::numeric_limits<double>::epsilon());
-      avg = 0.0;
+      ASSERT_NEAR(
+        sum / double(window_len), ma.GetAverage(), std::numeric_limits<double>::epsilon());
+      sum = 0.0;
     }
   }
 }
