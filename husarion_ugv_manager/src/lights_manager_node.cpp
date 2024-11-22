@@ -70,7 +70,7 @@ void LightsManagerNode::Initialize()
     "hardware/e_stop", rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable(),
     std::bind(&LightsManagerNode::EStopCB, this, _1));
 
-  const float timer_freq = this->params_.timer_frequency;
+  const double timer_freq = this->params_.timer_frequency;
   const auto timer_period_ms =
     std::chrono::milliseconds(static_cast<unsigned>(1.0f / timer_freq * 1000));
 
