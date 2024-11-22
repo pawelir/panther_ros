@@ -8,6 +8,10 @@ This package contains:
 
 - `battery.launch.py`: Responsible for activating battery node, which dealing with reading and publishing battery data.
 
+## Configuration Files
+
+- [`battery_parameters.yaml`](./config/battery_parameters.yaml): Defines parameters for `battery_driver_node`.
+
 ## ROS Nodes
 
 ### battery_driver_node
