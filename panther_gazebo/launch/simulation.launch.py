@@ -71,6 +71,14 @@ def generate_launch_description():
         ),
     )
 
+    spawn_charging_docks = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            PathJoinSubstitution(
+                [FindPackageShare("panther_gazebo"), "launch", "spawn_charging_docks.launch.py"]
+            )
+        ),
+    )
+
     return LaunchDescription(
         [
             declare_gz_gui,
@@ -79,5 +87,6 @@ def generate_launch_description():
             SetUseSimTime(True),
             gz_sim,
             simulate_robots,
+            spawn_charging_docks,
         ]
     )

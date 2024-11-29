@@ -36,16 +36,18 @@ def generate_launch_description():
         description=("Path to docking server configuration file."),
     )
 
-    declare_use_docking_arg = DeclareLaunchArgument(
-        "use_docking",
-        default_value="True",
-        description="Enable docking server.",
-        choices=["True", "False", "true", "false"],
+    apriltag_config_path = LaunchConfiguration("apriltag_config_path")
+    declare_apriltag_config_path_arg = DeclareLaunchArgument(
+        "apriltag_config_path",
+        default_value=PathJoinSubstitution(
+            [FindPackageShare("panther_docking"), "config", "apriltag.yaml"]
+        ),
+        description=("Path to apriltag configuration file. Only used in simulation."),
     )
 
-    namespace = LaunchConfiguration("namespace")
-    use_docking = LaunchConfiguration("use_docking")
-    use_sim = LaunchConfiguration("use_sim")
+    namespace = LaunchConfiguration("namespace", default="")
+    use_docking = LaunchConfiguration("use_docking", default="True")
+    use_sim = LaunchConfiguration("use_sim", default="False")
 
     log_level = LaunchConfiguration("log_level")
     declare_log_level = DeclareLaunchArgument(
@@ -119,6 +121,20 @@ def generate_launch_description():
         condition=IfCondition(use_docking),
     )
 
+    apriltag_node = Node(
+        package="apriltag_ros",
+        executable="apriltag_node",
+        parameters=[{"use_sim_time": True}, apriltag_config_path],
+        namespace=namespace,
+        emulate_tty=True,
+        remappings={
+            "camera_info": "camera/color/camera_info",
+            "image_rect": "camera/color/image_raw",
+            "detections": "docking/april_tags",
+        }.items(),
+        condition=IfCondition(PythonExpression([use_docking, " and ", use_sim])),
+    )
+
     station_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             PathJoinSubstitution(
@@ -143,27 +159,9 @@ def generate_launch_description():
         ),
     )
 
-    # FIXME: Remove before release
-    panther_manager_dir = FindPackageShare("panther_manager")
-    docking_manager_node = Node(
-        package="panther_manager",
-        executable="docking_manager_node",
-        name="docking_manager",
-        parameters=[
-            PathJoinSubstitution([panther_manager_dir, "config", "docking_manager.yaml"]),
-            {
-                "bt_project_path": PathJoinSubstitution(
-                    [panther_manager_dir, "behavior_trees", "DockingBT.btproj"]
-                )
-            },
-        ],
-        namespace=namespace,
-        emulate_tty=True,
-    )
-
     return LaunchDescription(
         [
-            declare_use_docking_arg,
+            declare_apriltag_config_path_arg,
             declare_docking_server_config_path_arg,
             declare_log_level,
             declare_use_wibotic_info_arg,
@@ -171,7 +169,7 @@ def generate_launch_description():
             docking_server_node,
             docking_server_activate_node,
             dock_pose_publisher,
+            apriltag_node,
             wibotic_connector_can,
-            docking_manager_node,
         ]
     )

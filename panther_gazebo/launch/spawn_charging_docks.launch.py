@@ -22,14 +22,8 @@ import yaml
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, OpaqueFunction
 from launch.conditions import IfCondition
-from launch.substitutions import (
-    Command,
-    FindExecutable,
-    LaunchConfiguration,
-    PathJoinSubstitution,
-)
+from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 from launch_ros.actions import Node
-from launch_ros.parameter_descriptions import ParameterValue
 from launch_ros.substitutions import FindPackageShare
 
 
@@ -44,39 +38,9 @@ def generate_apriltag_and_get_path(tag_id):
     return temp_file.name
 
 
-def generate_urdf(name, apriltag_id, apriltag_size):
-    apriltag_image_path = generate_apriltag_and_get_path(apriltag_id)
-
-    station_description_content = Command(
-        [
-            PathJoinSubstitution([FindExecutable(name="xacro")]),
-            " ",
-            PathJoinSubstitution(
-                [
-                    FindPackageShare("ros_components_description"),
-                    "urdf",
-                    "wibotic_station.urdf.xacro",
-                ]
-            ),
-            " device_namespace:=",
-            name,
-            " apriltag_image_path:=",
-            apriltag_image_path,
-            " apriltag_size:=",
-            apriltag_size,
-        ]
-    )
-    return station_description_content
-
-
-def launch_stations_descriptions(context, *args, **kwargs):
-    apriltag_id = int(LaunchConfiguration("apriltag_id").perform(context))
-    apriltag_size = LaunchConfiguration("apriltag_size").perform(context)
-    use_docking = LaunchConfiguration("use_docking").perform(context)
-
+def spawn_stations(context, *args, **kwargs):
     docking_server_config_path = LaunchConfiguration("docking_server_config_path").perform(context)
-    apriltag_size = LaunchConfiguration("apriltag_size").perform(context)
-
+    use_docking = LaunchConfiguration("use_docking").perform(context)
     docking_server_config = None
 
     try:
@@ -89,43 +53,55 @@ def launch_stations_descriptions(context, *args, **kwargs):
         return []
 
     actions = []
+
     ros_parameters = docking_server_config["/**"]["ros__parameters"]
     docks_names = ros_parameters["docks"]
     for dock_name in docks_names:
-        apriltag_id = ros_parameters[dock_name]["apriltag_id"]
-        station_description_content = generate_urdf(dock_name, apriltag_id, apriltag_size)
-        station_description = {
-            "robot_description": ParameterValue(station_description_content, value_type=str)
-        }
+        pose = ros_parameters[dock_name]["pose"]
 
-        station_state_pub_node = Node(
-            package="robot_state_publisher",
-            executable="robot_state_publisher",
-            name=[dock_name, "_station_state_publisher"],
-            parameters=[
-                station_description,
+        spawn_station = Node(
+            package="ros_gz_sim",
+            executable="create",
+            arguments=[
+                "-name",
+                [dock_name, "_station"],
+                "-topic",
+                [dock_name, "_station_description"],
+                "-x",
+                str(pose[0]),
+                "-y",
+                str(pose[1] - 2.0),  # -2.0 is the offset between world and map
+                "-z",
+                "0.2",  # station z is not in 0.0
+                "-R",
+                "1.57",
+                "-P",
+                "0.0",
+                "-Y",
+                str(pose[2] - 1.57),
             ],
-            remappings=[("robot_description", [dock_name, "_station_description"])],
             emulate_tty=True,
             condition=IfCondition(use_docking),
         )
 
-        actions.append(station_state_pub_node)
+        actions.append(spawn_station)
 
     return actions
 
 
 def generate_launch_description():
-    declare_apriltag_id = DeclareLaunchArgument(
-        "apriltag_id",
-        default_value="0",
-        description="ID of a generated apriltag on the station",
+    declare_device_namespace = DeclareLaunchArgument(
+        "device_namespace",
+        default_value="",
+        description="Device namespace that will appear before all non absolute topics and TF frames, used for distinguishing multiple cameras on the same robot.",
     )
 
-    declare_apriltag_size = DeclareLaunchArgument(
-        "apriltag_size",
-        default_value="0.06",
-        description="Size in meters of a generated apriltag on the station",
+    declare_docking_server_config_path_arg = DeclareLaunchArgument(
+        "docking_server_config_path",
+        default_value=PathJoinSubstitution(
+            [FindPackageShare("panther_docking"), "config", "panther_docking_server.yaml"]
+        ),
+        description=("Path to docking server configuration file."),
     )
 
     declare_use_docking_arg = DeclareLaunchArgument(
@@ -137,9 +113,9 @@ def generate_launch_description():
 
     return LaunchDescription(
         [
-            declare_apriltag_id,
-            declare_apriltag_size,
+            declare_docking_server_config_path_arg,
+            declare_device_namespace,
             declare_use_docking_arg,
-            OpaqueFunction(function=launch_stations_descriptions),
+            OpaqueFunction(function=spawn_stations),
         ]
     )
