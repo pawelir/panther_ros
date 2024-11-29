@@ -189,7 +189,9 @@ bool GPIOController::ChargerEnable(const bool enable)
 
 bool GPIOController::LEDControlEnable(const bool enable)
 {
-  return gpio_driver_->SetPinValue(GPIOPin::LED_SBC_SEL, enable);
+  // pin_validation_wait_time=10ms used due to slow pin state transition
+  // on pin loaded by high 100nF capacity in SBC Overlay v1.4
+  return gpio_driver_->SetPinValue(GPIOPin::LED_SBC_SEL, enable, std::chrono::milliseconds(10));
 }
 
 std::unordered_map<GPIOPin, bool> GPIOController::QueryControlInterfaceIOStates() const
