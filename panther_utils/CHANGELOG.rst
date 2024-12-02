@@ -2,8 +2,8 @@
 Changelog for package panther_utils
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.1.2 (2024-12-02)
+------------------
 * Merge pull request `#408 <https://github.com/husarion/panther_ros/issues/408>`_ from husarion/ros2-lights-integration-tests
 * Add error handling in get_node_info() method
 * Add subscription verification

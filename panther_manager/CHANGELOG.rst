@@ -2,8 +2,8 @@
 Changelog for package panther_manager
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.1.2 (2024-12-02)
+------------------
 * Fix safety_manager path (`#411 <https://github.com/husarion/panther_ros/issues/411>`_)
 * Merge branch 'ros2-devel' into ros2-lights-tests
 * Contributors: Jakub Delicat, pawelirh

@@ -2,8 +2,8 @@
 Changelog for package panther_battery
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.1.2 (2024-12-02)
+------------------
 * Merge branch 'ros2-devel' into ros2-lights-tests
 * Contributors: pawelirh
 
