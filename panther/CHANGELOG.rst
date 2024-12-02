@@ -2,6 +2,11 @@
 Changelog for package panther
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Merge branch 'ros2-devel' into ros2-lights-tests
+* Contributors: pawelirh
+
 2.1.1 (2024-09-05)
 ------------------
 * Merge branch 'ros2-devel' into ros2-ns-refactor
