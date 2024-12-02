@@ -45,7 +45,7 @@ The package contains a `PantherChargingDock` plugin for the [opennav_docking](ht
 
 #### Parameters
 
-- `base_frame` [*string*, default: **base_link**]: A fixed frame id of a wireless receiver.
+- `base_frame` [*string*, default: **base_link**]: A frame id of a wireless receiver.
 - `fixed_frame` [*string*, default: **odom**]: A fixed frame id of a robot.
 - `panther_charging_dock.external_detection_timeout` [*double*, default: **0.2**]: A timeout in seconds for looking up a transformation from an april tag of a dock to a base frame id.
 - `panther_charging_dock.docking_distance_threshold` [*double*, default: **0.05**]: A threshold of a distance between a robot pose and a dock pose to declare if docking succeed.
