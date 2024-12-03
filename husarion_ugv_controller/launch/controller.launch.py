@@ -117,7 +117,7 @@ def generate_launch_description():
         "wheel_config_path",
         default_value=PathJoinSubstitution(
             [
-                FindPackageShare("husario_ugv_description"),
+                FindPackageShare("husarion_ugv_description"),
                 "config",
                 PythonExpression(["'", wheel_type, ".yaml'"]),
             ]
@@ -153,7 +153,9 @@ def generate_launch_description():
         [
             PathJoinSubstitution([FindExecutable(name="xacro")]),
             " ",
-            PathJoinSubstitution([FindPackageShare("husario_ugv_description"), "urdf", urdf_file]),
+            PathJoinSubstitution(
+                [FindPackageShare("husarion_ugv_description"), "urdf", urdf_file]
+            ),
             " use_sim:=",
             use_sim,
             " wheel_config_file:=",
