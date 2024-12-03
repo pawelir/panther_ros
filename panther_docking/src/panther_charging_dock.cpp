@@ -67,17 +67,23 @@ void PantherChargingDock::activate()
     std::bind(&PantherChargingDock::setDockPose, this, std::placeholders::_1));
   staging_pose_pub_ = node->create_publisher<PoseStampedMsg>("docking/staging_pose", 1);
 
+  dock_pose_publisher_change_state_client_ =
+    node->create_client<lifecycle_msgs::srv::ChangeState>("dock_pose_publisher/change_state");
+
   if (use_wibotic_info_) {
     wibotic_info_sub_ = node->create_subscription<WiboticInfoMsg>(
       "wibotic_info", 1,
       std::bind(&PantherChargingDock::setWiboticInfo, this, std::placeholders::_1));
   }
+
+  setDockPosePublisherState(lifecycle_msgs::msg::Transition::TRANSITION_CONFIGURE);
 }
 
 void PantherChargingDock::deactivate()
 {
   dock_pose_sub_.reset();
   staging_pose_pub_.reset();
+  dock_pose_publisher_change_state_client_.reset();
 }
 
 void PantherChargingDock::declareParameters(const rclcpp_lifecycle::LifecycleNode::SharedPtr & node)
@@ -144,10 +150,12 @@ PantherChargingDock::PoseStampedMsg PantherChargingDock::getStagingPose(
 bool PantherChargingDock::getRefinedPose(PoseStampedMsg & pose)
 {
   RCLCPP_DEBUG(logger_, "Getting refined pose");
+  setDockPosePublisherState(lifecycle_msgs::msg::Transition::TRANSITION_ACTIVATE);
+
   rclcpp::Time request_detection_time;
 
   if (dock_pose_.header.frame_id.empty()) {
-    throw opennav_docking_core::FailedToDetectDock("No dock pose detected");
+    return false;
   }
 
   {
@@ -189,10 +197,15 @@ bool PantherChargingDock::isCharging()
   RCLCPP_DEBUG(logger_, "Checking if charging");
   try {
     if (!use_wibotic_info_) {
-      return isDocked();
+      if (isDocked()) {
+        setDockPosePublisherState(lifecycle_msgs::msg::Transition::TRANSITION_DEACTIVATE);
+        return true;
+      }
+      return false;
     }
 
     if (!wibotic_info_) {
+      setDockPosePublisherState(lifecycle_msgs::msg::Transition::TRANSITION_DEACTIVATE);
       throw opennav_docking_core::FailedToCharge("No Wibotic info received.");
     }
 
@@ -211,11 +224,12 @@ bool PantherChargingDock::isCharging()
     }
 
     if (wibotic_info_->i_charger > kWiboticChargingCurrentThreshold) {
+      setDockPosePublisherState(lifecycle_msgs::msg::Transition::TRANSITION_DEACTIVATE);
       return true;
     }
   } catch (const opennav_docking_core::FailedToDetectDock & e) {
     RCLCPP_ERROR_STREAM(logger_, "An occurred error while checking if charging: " << e.what());
-    return false;
+    setDockPosePublisherState(lifecycle_msgs::msg::Transition::TRANSITION_DEACTIVATE);
   }
 
   return false;
@@ -255,6 +269,20 @@ void PantherChargingDock::updateAndPublishStagingPose(const std::string & frame)
 void PantherChargingDock::setWiboticInfo(const WiboticInfoMsg::SharedPtr msg)
 {
   wibotic_info_ = std::make_shared<WiboticInfoMsg>(*msg);
+}
+
+void PantherChargingDock::setDockPosePublisherState(std::uint8_t state)
+{
+  if (dock_pose_publisher_state_ == state) {
+    return;
+  }
+
+  RCLCPP_DEBUG_STREAM(logger_, "Setting dock pose publisher state to: " << static_cast<int>(state));
+  dock_pose_publisher_state_ = state;
+
+  auto request = std::make_shared<lifecycle_msgs::srv::ChangeState::Request>();
+  request->transition.id = state;
+  dock_pose_publisher_change_state_client_->async_send_request(request);
 }
 
 }  // namespace panther_docking
