@@ -39,15 +39,12 @@ def generate_launch_description():
     )
 
     robot_model = LaunchConfiguration("robot_model")
-    robot_model_dict = {"LNX": "lynx", "PTH": "panther"}
-    robot_model_env = os.environ.get("ROBOT_MODEL", default="PTH")
-
     robot_description_pkg = PythonExpression(["'", robot_model, "_description'"])
     robot_description_common_dir = PathJoinSubstitution(["/config", robot_description_pkg])
 
     declare_robot_model_arg = DeclareLaunchArgument(
         "robot_model",
-        default_value=robot_model_dict[robot_model_env],
+        default_value=EnvironmentVariable(name="ROBOT_MODEL_NAME", default_value="panther"),
         description="Specify robot model",
         choices=["lynx", "panther"],
     )
