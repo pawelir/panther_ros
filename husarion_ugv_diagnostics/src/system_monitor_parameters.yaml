@@ -11,12 +11,12 @@ system_monitor:
     validation: { bounds<>: [0.0, 120.0] }
   ram_usage_warn_threshold:
     type: double
-    default_value: 95.0
+    default_value: 90.0
     description: Threshold for memory usage warning in percentage.
     validation: { bounds<>: [0.0, 100.0] }
   disk_usage_warn_threshold:
     type: double
-    default_value: 95.0
+    default_value: 90.0
     description: Threshold for disk usage warning in percentage.
     validation: { bounds<>: [0.0, 100.0] }
   publish_frequency:
