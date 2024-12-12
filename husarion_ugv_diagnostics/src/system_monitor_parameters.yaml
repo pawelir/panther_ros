@@ -8,7 +8,7 @@ system_monitor:
     type: double
     default_value: 80.0
     description: Threshold for CPU temperature warning in degrees Celsius.
-    validation: { bounds<>: [0.0, 1000.0] }
+    validation: { bounds<>: [0.0, 120.0] }
   ram_usage_warn_threshold:
     type: double
     default_value: 95.0

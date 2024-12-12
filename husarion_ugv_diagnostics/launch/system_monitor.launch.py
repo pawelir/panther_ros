@@ -38,7 +38,7 @@ def generate_launch_description():
         "system_monitor_config_path",
         default_value=PathJoinSubstitution(
             [
-                FindPackageShare("panther_diagnostics"),
+                FindPackageShare("husarion_ugv_diagnostics"),
                 "config",
                 "system_monitor.yaml",
             ]
